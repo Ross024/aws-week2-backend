@@ -1,13 +1,16 @@
+require('dotenv').config()
+
 const express = require("express")
 const multer = require("multer")
 const fs = require("fs")
+const path = require("path")
+
+const database = require('./database.js')
 
 const app = express()
 const upload = multer({ dest: 'images'})
 
-app.get("/", (req, res) => {
-    res.send("💩")
-})
+app.use(express.static(path.join(__dirname, "build")))
 
 app.get('/images/:imageName', (req, res) => {
     // do a bunch of if statements to make sure the user is
@@ -18,12 +21,19 @@ app.get('/images/:imageName', (req, res) => {
     readStream.pipe(res)
 })
 
-app.post("/api/images", upload.single('image'), (req, res) => {
+app.get("/api/images", async (req, res) => {
+    const images = await database.getImages()
+
+    res.send({images})
+})
+
+app.post("/api/images", upload.single('image'), async (req, res) => {
     const imagePath = req.file.path
     const description = req.body.description
 
-    console.log(description, imagePath)
-    res.send({description, imagePath})
+    const image = await database.addImage(imagePath, description)
+
+    res.send({image})
 })
 
 
